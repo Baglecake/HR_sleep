@@ -1,0 +1,47 @@
+# Data files (too large for GitHub - download from PhysioNet)
+heart_rate/
+labels/
+motion/
+steps/
+
+# Model outputs
+*.json
+best_params.csv
+optimization_history.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PhysioNet files
+*.hea
+RECORDS
+SHA256SUMS.txt
+LICENSE.txt
