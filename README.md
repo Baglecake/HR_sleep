@@ -12,11 +12,21 @@ This project uses the [Motion and Heart Rate from a Wrist-Worn Wearable and Labe
 
 ## Quick Start (Google Colab)
 
+### Baseline: HR Only
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Baglecake/HR_sleep/blob/main/sleep_stage_prediction_colab.ipynb)
 
-1. Click the Colab badge above
-2. Run all cells - the notebook downloads the data automatically
-3. Wait for Optuna optimization to complete (~100 trials)
+Uses heart rate data only (~4MB download).
+
+### Ablation Study: HR + Motion + Steps
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Baglecake/HR_sleep/blob/main/sleep_stage_ablation_study.ipynb)
+
+Toggle data modalities to compare performance. ⚠️ Motion data is ~2GB.
+
+| Config | Expected Accuracy |
+|--------|-------------------|
+| HR only | ~30-40% |
+| HR + Motion | ~55-70% |
+| HR + Motion + Steps | ~56-71% |
 
 ## Local Installation
 
@@ -94,11 +104,12 @@ After running, you'll get:
 ## Files
 
 ```
-├── sleep_stage_optuna_xgboost.py   # Main Python script
-├── sleep_stage_prediction_colab.ipynb  # Colab notebook
-├── requirements.txt                # Dependencies
-├── README.md                       # This file
-└── .gitignore                      # Excludes data files
+├── sleep_stage_optuna_xgboost.py       # Main Python script (HR only)
+├── sleep_stage_prediction_colab.ipynb  # Colab notebook (HR only)
+├── sleep_stage_ablation_study.ipynb    # Ablation study (HR + Motion + Steps)
+├── requirements.txt                    # Dependencies
+├── README.md                           # This file
+└── .gitignore                          # Excludes data files
 ```
 
 ## Requirements
