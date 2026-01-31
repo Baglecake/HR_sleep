@@ -289,7 +289,6 @@ def create_xgboost_objective(
             'subsample': trial.suggest_float('subsample', 0.5, 1.0),
             'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
             'gamma': trial.suggest_float('gamma', 1e-8, 1.0, log=True),
-            'early_stopping_rounds': 50,  # Stop if no improvement for 50 rounds
             'random_state': 42,
             'verbosity': 0
         }
