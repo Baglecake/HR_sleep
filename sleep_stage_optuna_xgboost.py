@@ -278,12 +278,13 @@ def create_xgboost_objective(
             'objective': 'multi:softmax',
             'num_class': len(np.unique(y)),
             'eval_metric': 'mlogloss',
-            'booster': trial.suggest_categorical('booster', ['gbtree', 'dart']),
+            'booster': 'gbtree',  # Fixed to gbtree (dart is 10-50x slower)
+            'device': 'cuda',     # Use GPU if available (falls back to CPU)
             'lambda': trial.suggest_float('lambda', 1e-8, 10.0, log=True),
             'alpha': trial.suggest_float('alpha', 1e-8, 10.0, log=True),
             'max_depth': trial.suggest_int('max_depth', 3, 10),
             'learning_rate': trial.suggest_float('learning_rate', 1e-3, 0.3, log=True),
-            'n_estimators': trial.suggest_int('n_estimators', 50, 500),
+            'n_estimators': trial.suggest_int('n_estimators', 50, 300),
             'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
             'subsample': trial.suggest_float('subsample', 0.5, 1.0),
             'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
@@ -291,11 +292,6 @@ def create_xgboost_objective(
             'random_state': 42,
             'verbosity': 0
         }
-
-        # Add dart-specific parameters
-        if params['booster'] == 'dart':
-            params['sample_type'] = trial.suggest_categorical('sample_type', ['uniform', 'weighted'])
-            params['rate_drop'] = trial.suggest_float('rate_drop', 0.0, 0.3)
 
         # Handle class imbalance with scale_pos_weight approach
         # For multiclass, we use sample weights instead
@@ -326,6 +322,7 @@ def create_xgboost_objective(
                 X_train, y_train,
                 sample_weight=weights_train,
                 eval_set=[(X_val, y_val)],
+                early_stopping_rounds=50,  # Stop if no improvement for 50 rounds
                 verbose=False
             )
 
