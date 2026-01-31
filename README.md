@@ -12,7 +12,7 @@ This project uses the [Motion and Heart Rate from a Wrist-Worn Wearable and Labe
 
 ## Quick Start (Google Colab)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/main/sleep_stage_prediction_colab.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Baglecake/HR_sleep/blob/main/sleep_stage_prediction_colab.ipynb)
 
 1. Click the Colab badge above
 2. Run all cells - the notebook downloads the data automatically
@@ -22,8 +22,8 @@ This project uses the [Motion and Heart Rate from a Wrist-Worn Wearable and Labe
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
-cd YOUR_REPO
+git clone https://github.com/Baglecake/HR_sleep.git
+cd HR_sleep
 
 # Install dependencies
 pip install -r requirements.txt
