@@ -248,8 +248,42 @@ def prepare_dataset() -> Tuple[pd.DataFrame, List[str]]:
     dataset = dataset[dataset['hr_count'] >= 2].copy()
 
     # Drop rows with NaN in critical features
-    feature_cols = [c for c in dataset.columns if c.startswith('hr_')]
     dataset = dataset.dropna(subset=['hr_mean', 'hr_std'])
+
+    # =============================================================
+    # ADD TEMPORAL CONTEXT FEATURES (Critical for sleep staging!)
+    # =============================================================
+    print("\nAdding temporal context features...")
+
+    # Sort by subject and time (CRITICAL for lag/lead to work correctly)
+    dataset = dataset.sort_values(['subject_id', 'time_offset']).reset_index(drop=True)
+
+    # 1. Rolling averages (trend context) - 5 epochs = 2.5 minutes window
+    dataset['hr_mean_roll_5'] = dataset.groupby('subject_id')['hr_mean'].transform(
+        lambda x: x.rolling(window=5, center=True, min_periods=1).mean()
+    )
+    dataset['hr_std_roll_5'] = dataset.groupby('subject_id')['hr_std'].transform(
+        lambda x: x.rolling(window=5, center=True, min_periods=1).mean()
+    )
+
+    # 2. Lag features (past context) - what happened before?
+    for lag in [1, 2, 4]:  # 30s, 60s, 2min ago
+        dataset[f'hr_mean_lag_{lag}'] = dataset.groupby('subject_id')['hr_mean'].shift(lag)
+        dataset[f'hr_std_lag_{lag}'] = dataset.groupby('subject_id')['hr_std'].shift(lag)
+
+    # 3. Lead features (future context) - what happens next? (valid for offline analysis)
+    for lead in [1, 2]:  # 30s, 60s ahead
+        dataset[f'hr_mean_lead_{lead}'] = dataset.groupby('subject_id')['hr_mean'].shift(-lead)
+
+    # 4. Rate of change (is HR dropping or rising?)
+    dataset['hr_diff_1'] = dataset['hr_mean'] - dataset.groupby('subject_id')['hr_mean'].shift(1)
+    dataset['hr_diff_2'] = dataset['hr_mean'] - dataset.groupby('subject_id')['hr_mean'].shift(2)
+
+    # 5. Variability change
+    dataset['hr_std_diff_1'] = dataset['hr_std'] - dataset.groupby('subject_id')['hr_std'].shift(1)
+
+    # Drop NaNs created by shifting (edges of each subject's recording)
+    dataset = dataset.dropna()
 
     print(f"\nTotal epochs after filtering: {len(dataset)}")
     print(f"\nSleep stage distribution:")
@@ -263,7 +297,8 @@ def create_xgboost_objective(
     y: np.ndarray,
     groups: np.ndarray,
     n_folds: int = 5,
-    use_group_kfold: bool = True
+    use_group_kfold: bool = True,
+    use_class_weights: bool = False  # DISABLED by default - helps accuracy without motion data
 ) -> callable:
     """
     Create an Optuna objective function for XGBoost hyperparameter tuning.
@@ -293,13 +328,13 @@ def create_xgboost_objective(
             'verbosity': 0
         }
 
-        # Handle class imbalance with scale_pos_weight approach
-        # For multiclass, we use sample weights instead
-        class_weights = {}
-        for cls in np.unique(y):
-            class_weights[cls] = len(y) / (len(np.unique(y)) * np.sum(y == cls))
-
-        sample_weights = np.array([class_weights[yi] for yi in y])
+        # Optionally use class weights (disabled by default for HR-only data)
+        sample_weights = None
+        if use_class_weights:
+            class_weights = {}
+            for cls in np.unique(y):
+                class_weights[cls] = len(y) / (len(np.unique(y)) * np.sum(y == cls))
+            sample_weights = np.array([class_weights[yi] for yi in y])
 
         # Cross-validation
         if use_group_kfold:
@@ -314,7 +349,7 @@ def create_xgboost_objective(
         for fold_idx, (train_idx, val_idx) in enumerate(splits):
             X_train, X_val = X[train_idx], X[val_idx]
             y_train, y_val = y[train_idx], y[val_idx]
-            weights_train = sample_weights[train_idx]
+            weights_train = sample_weights[train_idx] if sample_weights is not None else None
 
             # Create and train model
             model = xgb.XGBClassifier(**params)
